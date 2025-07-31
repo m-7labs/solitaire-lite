@@ -1,94 +1,211 @@
 import { Card } from './gameLogic.js';
 
-// UI Rendering System
+// UI Rendering System - Performance Optimized
+
+// DOM Element Cache for performance optimization
+const DOMCache = {
+    elements: new Map(),
+    get(id) {
+        if (!this.elements.has(id)) {
+            this.elements.set(id, document.getElementById(id));
+        }
+        return this.elements.get(id);
+    },
+    clear() {
+        this.elements.clear();
+    }
+};
+
+// Mobile detection and performance settings
+const MobileOptimizer = {
+    isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+    isLowEnd: navigator.hardwareConcurrency <= 2 || navigator.deviceMemory <= 2,
+    maxFrameRate: 60,
+
+    init() {
+        // Reduce frame rate for low-end devices
+        if (this.isLowEnd) {
+            this.maxFrameRate = 30;
+        }
+
+        // Enable performance monitoring if available
+        if ('performance' in window) {
+            this.startPerformanceMonitoring();
+        }
+    },
+
+    startPerformanceMonitoring() {
+        // Monitor frame rate and adjust animations accordingly
+        let frameCount = 0;
+        let lastTime = performance.now();
+
+        const monitor = () => {
+            const currentTime = performance.now();
+            frameCount++;
+
+            if (currentTime - lastTime >= 1000) {
+                const fps = Math.round((frameCount * 1000) / (currentTime - lastTime));
+                if (fps < 20 && this.maxFrameRate > 20) {
+                    this.maxFrameRate = Math.max(20, this.maxFrameRate - 10);
+                }
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+
+            requestAnimationFrame(monitor);
+        };
+
+        requestAnimationFrame(monitor);
+    }
+};
+
+// Initialize mobile optimizer
+MobileOptimizer.init();
+
+// Optimized card creation with object pooling
+const CardPool = {
+    pool: [],
+
+    getCard() {
+        return this.pool.pop() || document.createElement('div');
+    },
+
+    returnCard(card) {
+        // Reset card state
+        card.className = 'card';
+        card.draggable = false;
+        card.tabIndex = -1;
+        card.removeAttribute('role');
+        card.removeAttribute('aria-label');
+        card.removeAttribute('data-rank');
+        card.removeAttribute('data-suit');
+        card.style.top = '';
+        card.style.transform = '';
+        card.textContent = '';
+
+        // Return to pool if not too large
+        if (this.pool.length < 52) {
+            this.pool.push(card);
+        }
+    }
+};
+
+// Cached suit symbols for performance
+const suitSymbols = {
+    hearts: '♥',
+    diamonds: '♦',
+    clubs: '♣',
+    spades: '♠'
+};
+
+function getSuitSymbol(suit) {
+    return suitSymbols[suit];
+}
 
 /**
- * Renders a single card element.
+ * Renders a single card element with performance optimizations.
  * @param {Card} card - The card to render.
  * @returns {HTMLElement} The card element.
  */
 export function renderCard(card) {
-    const cardDiv = document.createElement('div');
+    const cardDiv = CardPool.getCard();
     cardDiv.classList.add('card');
     cardDiv.dataset.rank = card.rank;
     cardDiv.dataset.suit = card.suit;
 
     if (card.isFaceUp) {
         cardDiv.classList.add('face-up');
-        const suitSymbols = {
-            hearts: '♥',
-            diamonds: '♦',
-            clubs: '♣',
-            spades: '♠'
-        };
+
+        // Use cached suit symbols
+        const suitSymbol = getSuitSymbol(card.suit);
+
+        // Create elements more efficiently
+        const fragment = document.createDocumentFragment();
+
         const rankTopLeft = document.createElement('span');
-        rankTopLeft.classList.add('card-rank');
+        rankTopLeft.className = 'card-rank';
         rankTopLeft.textContent = card.rank;
 
         const suitCenter = document.createElement('span');
-        suitCenter.classList.add('card-suit');
-        suitCenter.textContent = suitSymbols[card.suit];
+        suitCenter.className = 'card-suit';
+        suitCenter.textContent = suitSymbol;
 
         const rankBottomRight = document.createElement('span');
-        rankBottomRight.classList.add('card-rank-bottom');
+        rankBottomRight.className = 'card-rank-bottom';
         rankBottomRight.textContent = card.rank;
 
-        cardDiv.appendChild(rankTopLeft);
-        cardDiv.appendChild(suitCenter);
-        cardDiv.appendChild(rankBottomRight);
+        fragment.appendChild(rankTopLeft);
+        fragment.appendChild(suitCenter);
+        fragment.appendChild(rankBottomRight);
+        cardDiv.appendChild(fragment);
 
-        if (card.suit === 'hearts' || card.suit === 'diamonds') {
-            cardDiv.classList.add('red');
-        } else {
-            cardDiv.classList.add('black');
-        }
+        // Set color class efficiently
+        cardDiv.classList.add(card.suit === 'hearts' || card.suit === 'diamonds' ? 'red' : 'black');
+
         cardDiv.draggable = true;
-        cardDiv.tabIndex = 0; // Make face-up cards focusable
+        cardDiv.tabIndex = 0;
         cardDiv.setAttribute('role', 'button');
         cardDiv.setAttribute('aria-label', `${card.rank} of ${card.suit}`);
     } else {
         cardDiv.classList.add('face-down');
-        cardDiv.draggable = false;
         cardDiv.setAttribute('aria-label', 'Face down card');
     }
     return cardDiv;
 }
 
 /**
- * Renders the stock pile.
- * @param {Card[]} stockPile - The stock pile array.
- * @param {Card[]} wastePile - The waste pile array.
+ * Efficiently clears an element's children and returns them to object pool.
+ * @param {HTMLElement} element - The element to clear.
  */
-export function renderStockPile(stockPile, wastePile) {
-    const stockPileDiv = document.getElementById('stock-pile');
-    stockPileDiv.innerHTML = '';
-    if (stockPile.length > 0) {
-        const card = new Card('', ''); // Fake card for rendering back
-        const cardDiv = renderCard(card);
-        stockPileDiv.appendChild(cardDiv);
-    } else {
-        // Show reset symbol if stock is empty but waste is not
-        if (wastePile.length > 0) {
-            const resetDiv = document.createElement('div');
-            resetDiv.textContent = '♻️';
-            resetDiv.style.fontSize = '3rem';
-            resetDiv.style.cursor = 'pointer';
-            resetDiv.title = 'Reset Waste Pile';
-            stockPileDiv.appendChild(resetDiv);
+function clearElement(element) {
+    while (element.firstChild) {
+        const child = element.firstChild;
+        if (child.classList && child.classList.contains('card')) {
+            CardPool.returnCard(child);
         }
+        element.removeChild(child);
     }
 }
 
 /**
- * Renders the waste pile.
+ * Renders the stock pile with performance optimizations.
+ * @param {Card[]} stockPile - The stock pile array.
+ * @param {Card[]} wastePile - The waste pile array.
+ */
+export function renderStockPile(stockPile, wastePile) {
+    const stockPileDiv = DOMCache.get('stock-pile');
+
+    // Efficiently clear existing content
+    clearElement(stockPileDiv);
+
+    if (stockPile.length > 0) {
+        const card = new Card('', ''); // Fake card for rendering back
+        const cardDiv = renderCard(card);
+        stockPileDiv.appendChild(cardDiv);
+    } else if (wastePile.length > 0) {
+        // Show reset symbol if stock is empty but waste is not
+        const resetDiv = document.createElement('div');
+        resetDiv.textContent = '♻️';
+        resetDiv.style.fontSize = '3rem';
+        resetDiv.style.cursor = 'pointer';
+        resetDiv.title = 'Reset Waste Pile';
+        stockPileDiv.appendChild(resetDiv);
+    }
+}
+
+/**
+ * Renders the waste pile with performance optimizations.
  * @param {Card[]} wastePile - The waste pile array.
  * @param {Function} addDropListeners - Function to add drop event listeners.
  * @param {Function} addDragListeners - Function to add drag event listeners.
  */
 export function renderWastePile(wastePile, addDropListeners, addDragListeners) {
-    const wastePileDiv = document.getElementById('waste-pile');
-    wastePileDiv.innerHTML = '';
+    const wastePileDiv = DOMCache.get('waste-pile');
+
+    // Efficiently clear existing content
+    clearElement(wastePileDiv);
     addDropListeners(wastePileDiv);
+
     if (wastePile.length > 0) {
         const topCard = wastePile[wastePile.length - 1];
         const cardDiv = renderCard(topCard);
@@ -98,15 +215,18 @@ export function renderWastePile(wastePile, addDropListeners, addDragListeners) {
 }
 
 /**
- * Renders the foundation piles.
+ * Renders the foundation piles with performance optimizations.
  * @param {Card[][]} foundationPiles - The foundation piles array.
  * @param {Function} addDropListeners - Function to add drop event listeners.
  */
 export function renderFoundationPiles(foundationPiles, addDropListeners) {
     for (let i = 0; i < 4; i++) {
-        const foundationPileDiv = document.getElementById(`foundation-pile-${i}`);
-        foundationPileDiv.innerHTML = '';
+        const foundationPileDiv = DOMCache.get(`foundation-pile-${i}`);
+
+        // Efficiently clear existing content
+        clearElement(foundationPileDiv);
         addDropListeners(foundationPileDiv);
+
         const pile = foundationPiles[i];
         if (pile.length > 0) {
             const topCard = pile[pile.length - 1];
@@ -116,25 +236,37 @@ export function renderFoundationPiles(foundationPiles, addDropListeners) {
 }
 
 /**
- * Renders the tableau piles.
+ * Renders the tableau piles with performance optimizations.
  * @param {Card[][]} tableauPiles - The tableau piles array.
  * @param {Function} addDropListeners - Function to add drop event listeners.
  * @param {Function} addDragListeners - Function to add drag event listeners.
  */
 export function renderTableauPiles(tableauPiles, addDropListeners, addDragListeners) {
     for (let i = 0; i < 7; i++) {
-        const tableauPileDiv = document.getElementById(`tableau-pile-${i}`);
-        tableauPileDiv.innerHTML = '';
+        const tableauPileDiv = DOMCache.get(`tableau-pile-${i}`);
+
+        // Efficiently clear existing content
+        clearElement(tableauPileDiv);
         addDropListeners(tableauPileDiv);
+
         const pile = tableauPiles[i];
+
+        // Use DocumentFragment for batch DOM operations
+        const fragment = document.createDocumentFragment();
+
         pile.forEach((card, index) => {
             const cardDiv = renderCard(card);
-            cardDiv.style.top = `${index * 25}px`; // Stagger cards
+
+            // Use transform instead of top for better performance
+            cardDiv.style.transform = `translateY(${index * 25}px)`;
+
             if (card.isFaceUp) {
                 addDragListeners(cardDiv);
             }
-            tableauPileDiv.appendChild(cardDiv);
+            fragment.appendChild(cardDiv);
         });
+
+        tableauPileDiv.appendChild(fragment);
     }
 }
 
@@ -158,7 +290,7 @@ export function updateDisplay(gameState, listeners) {
  * @param {string} message - The message to announce.
  */
 export function updateStatus(message) {
-    const statusDiv = document.getElementById('game-status');
+    const statusDiv = DOMCache.get('game-status');
     if (statusDiv) {
         // Clear previous message to ensure it's re-announced if the same message is sent again
         statusDiv.textContent = '';
@@ -286,18 +418,23 @@ export function handleWin(foundationPiles) {
 }
 
 /**
- * Launches a canvas-based fireworks animation.
+ * Launches an optimized canvas-based fireworks animation.
  */
 export function launchFireworks() {
-    const canvas = document.getElementById('fireworks-canvas');
+    const canvas = DOMCache.get('fireworks-canvas');
+    if (!canvas) return;
+
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     let particles = [];
+    let isAnimating = true;
 
     function createParticle(x, y) {
-        const count = 100;
+        // Reduce particle count for mobile devices
+        const count = MobileOptimizer.isMobile ? 50 : 100;
         const hue = Math.random() * 360;
+
         for (let i = 0; i < count; i++) {
             particles.push({
                 x: x,
@@ -315,7 +452,11 @@ export function launchFireworks() {
     }
 
     function updateParticles() {
+        if (!isAnimating) return;
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Use reverse loop for efficient array removal
         for (let i = particles.length - 1; i >= 0; i--) {
             const p = particles[i];
             p.speed *= p.friction;
@@ -334,39 +475,73 @@ export function launchFireworks() {
         }
     }
 
-    let fireworkInterval = setInterval(() => createParticle(Math.random() * canvas.width, Math.random() * canvas.height / 2), 800);
-    let animationFrame;
+    // Optimize animation frame rate for mobile
+    let lastFrameTime = 0;
+    const targetFrameTime = 1000 / MobileOptimizer.maxFrameRate;
 
-    function animate() {
-        animationFrame = requestAnimationFrame(animate);
-        updateParticles();
+    function animate(currentTime) {
+        if (!isAnimating) return;
+
+        if (currentTime - lastFrameTime >= targetFrameTime) {
+            updateParticles();
+            lastFrameTime = currentTime;
+        }
+
+        requestAnimationFrame(animate);
     }
 
-    animate();
+    // Reduce firework frequency for mobile
+    const fireworkInterval = MobileOptimizer.isMobile ? 1200 : 800;
+    let fireworkTimer = setInterval(() => {
+        if (isAnimating) {
+            createParticle(Math.random() * canvas.width, Math.random() * canvas.height / 2);
+        }
+    }, fireworkInterval);
+
+    requestAnimationFrame(animate);
 
     setTimeout(() => {
-        clearInterval(fireworkInterval);
+        clearInterval(fireworkTimer);
         setTimeout(() => {
-            cancelAnimationFrame(animationFrame);
+            isAnimating = false;
+            particles = [];
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }, 2000);
     }, 3000);
 }
 
 /**
- * Creates a DOM-based confetti animation.
+ * Creates an optimized DOM-based confetti animation.
  */
 export function createConfetti() {
-    const confettiCount = 200;
+    // Reduce confetti count significantly for mobile devices
+    const confettiCount = MobileOptimizer.isMobile ? 50 : 200;
     const colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f'];
+
+    // Use DocumentFragment for batch DOM operations
+    const fragment = document.createDocumentFragment();
+    const confettiElements = [];
+
     for (let i = 0; i < confettiCount; i++) {
         const confetti = document.createElement('div');
-        confetti.classList.add('confetti');
+        confetti.className = 'confetti';
         confetti.style.left = `${Math.random() * 100}vw`;
         confetti.style.top = `${-Math.random() * 100}vh`;
         confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
         confetti.style.animationDelay = `${Math.random() * 2}s`;
-        document.body.appendChild(confetti);
-        setTimeout(() => confetti.remove(), 3000);
+
+        fragment.appendChild(confetti);
+        confettiElements.push(confetti);
     }
+
+    document.body.appendChild(fragment);
+
+    // Clean up confetti elements efficiently
+    setTimeout(() => {
+        confettiElements.forEach(confetti => {
+            if (confetti.parentNode) {
+                confetti.parentNode.removeChild(confetti);
+            }
+        });
+    }, 3000);
 }

@@ -30,6 +30,55 @@ export class GameManager {
         this.touchClone = null;
         this.timerInterval = null;
         this.startTime = 0;
+
+        // Touch enhancements
+        this.touchStartTime = 0;
+        this.touchMoveThreshold = 10; // Minimum movement to register as drag
+        this.touchDebounceDelay = 50; // Debounce delay in ms
+        this.lastTouchAction = 0;
+        this.isDragging = false;
+
+        // DOM Element Cache for performance optimization
+        this.domCache = new Map();
+        this.cachedSelectors = new Map();
+
+        // Event listener references for cleanup
+        this.eventListeners = {
+            touchStart: this.handleTouchStart.bind(this),
+            touchMove: this.handleTouchMove.bind(this),
+            touchEnd: this.handleTouchEnd.bind(this),
+            touchCancel: this.handleTouchEnd.bind(this),
+            keyDown: this.handleKeyDown.bind(this),
+            stockClick: this.handleStockClick.bind(this)
+        };
+    }
+
+    /**
+     * Cached DOM element retrieval for performance
+     */
+    getDOMElement(id) {
+        if (!this.domCache.has(id)) {
+            this.domCache.set(id, document.getElementById(id));
+        }
+        return this.domCache.get(id);
+    }
+
+    /**
+     * Cached selector queries for performance
+     */
+    getCachedElements(selector) {
+        if (!this.cachedSelectors.has(selector)) {
+            this.cachedSelectors.set(selector, document.querySelectorAll(selector));
+        }
+        return this.cachedSelectors.get(selector);
+    }
+
+    /**
+     * Clear DOM cache when needed (e.g., on game reset)
+     */
+    clearDOMCache() {
+        this.domCache.clear();
+        this.cachedSelectors.clear();
     }
 
     saveGameState() {
@@ -99,14 +148,15 @@ export class GameManager {
             clearInterval(this.timerInterval);
             this.timerInterval = null;
         }
-        document.getElementById('timer').textContent = '00:00';
-        document.getElementById('moves').textContent = '0';
-        document.getElementById('score').textContent = '0';
+        this.getDOMElement('timer').textContent = '00:00';
+        this.getDOMElement('moves').textContent = '0';
+        this.getDOMElement('score').textContent = '0';
+        this.clearDOMCache(); // Clear cache on game reset
     }
 
     recordMove(move) {
         this.moveHistory.push(move);
-        document.getElementById('moves').textContent = this.moveHistory.length;
+        this.getDOMElement('moves').textContent = this.moveHistory.length;
     }
 
     getPile(type, index) {
@@ -176,7 +226,7 @@ export class GameManager {
             }
         }
 
-        document.getElementById('moves').textContent = this.moveHistory.length; // Update moves display
+        this.getDOMElement('moves').textContent = this.moveHistory.length; // Update moves display
         this.updateDisplayWrapper();
         updateStatus("Undid the last move.");
         this.saveGameState(); // Save state after undo
@@ -230,10 +280,10 @@ export class GameManager {
             this.draggedElement.classList.remove('dragging');
         }
         this.draggedElement = null;
-        document.querySelectorAll('.pile.drop-zone').forEach(pile => {
+        this.getCachedElements('.pile.drop-zone').forEach(pile => {
             pile.classList.remove('drop-zone');
         });
-        document.querySelectorAll('.drag-over').forEach(pile => {
+        this.getCachedElements('.drag-over').forEach(pile => {
             pile.classList.remove('drag-over');
         });
     }
@@ -276,51 +326,84 @@ export class GameManager {
     }
 
     handleTouchStart(e) {
+        // Debounce rapid touch events
+        const now = Date.now();
+        if (now - this.lastTouchAction < this.touchDebounceDelay) {
+            return;
+        }
+        this.lastTouchAction = now;
+
         const target = e.target.closest('.card');
         if (!target || target.classList.contains('card-back')) {
             return;
         }
 
+        // Prevent default only after validation to avoid blocking scroll
         e.preventDefault();
+
         this.touchDraggedElement = target;
+        this.touchStartTime = now;
+        this.isDragging = false;
 
         const touch = e.targetTouches[0];
         this.touchStartX = touch.clientX;
         this.touchStartY = touch.clientY;
 
-        this.touchClone = this.touchDraggedElement.cloneNode(true);
-        this.touchClone.style.position = 'absolute';
-        this.touchClone.style.zIndex = '1000';
-        this.touchClone.style.pointerEvents = 'none';
-        document.body.appendChild(this.touchClone);
+        // Add visual feedback immediately
+        this.touchDraggedElement.classList.add('touch-active');
 
-        const rect = this.touchDraggedElement.getBoundingClientRect();
-        this.touchClone.style.left = `${rect.left}px`;
-        this.touchClone.style.top = `${rect.top}px`;
-        this.touchClone.style.width = `${rect.width}px`;
-        this.touchClone.style.height = `${rect.height}px`;
-
-        this.touchDraggedElement.classList.add('dragging');
+        // Haptic feedback if supported
+        if (navigator.vibrate) {
+            navigator.vibrate(10);
+        }
     }
 
     handleTouchMove(e) {
         if (!this.touchDraggedElement) return;
 
-        e.preventDefault();
-
         const touch = e.targetTouches[0];
         const dx = touch.clientX - this.touchStartX;
         const dy = touch.clientY - this.touchStartY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Only start dragging if movement exceeds threshold
+        if (!this.isDragging && distance < this.touchMoveThreshold) {
+            return;
+        }
+
+        // Prevent default to avoid scrolling during drag
+        e.preventDefault();
+
+        // Initialize drag clone if not already done
+        if (!this.isDragging) {
+            this.isDragging = true;
+            this.touchDraggedElement.classList.remove('touch-active');
+            this.touchDraggedElement.classList.add('dragging');
+
+            this.touchClone = this.touchDraggedElement.cloneNode(true);
+            this.touchClone.style.position = 'absolute';
+            this.touchClone.style.zIndex = '1000';
+            this.touchClone.style.pointerEvents = 'none';
+            this.touchClone.style.opacity = '0.8';
+            document.body.appendChild(this.touchClone);
+
+            const rect = this.touchDraggedElement.getBoundingClientRect();
+            this.touchClone.style.left = `${rect.left}px`;
+            this.touchClone.style.top = `${rect.top}px`;
+            this.touchClone.style.width = `${rect.width}px`;
+            this.touchClone.style.height = `${rect.height}px`;
+        }
 
         this.touchClone.style.transform = `translate(${dx}px, ${dy}px)`;
 
+        // Find drop target with improved hit detection
         this.touchClone.style.display = 'none';
         const elementUnder = document.elementFromPoint(touch.clientX, touch.clientY);
         this.touchClone.style.display = '';
 
-        document.querySelectorAll('.pile.drop-zone').forEach(p => p.classList.remove('drop-zone'));
+        this.getCachedElements('.pile.drop-zone').forEach(p => p.classList.remove('drop-zone'));
         const dropTarget = elementUnder ? elementUnder.closest('.pile') : null;
-        if (dropTarget) {
+        if (dropTarget && dropTarget !== this.touchDraggedElement.parentElement) {
             dropTarget.classList.add('drop-zone');
         }
     }
@@ -329,13 +412,45 @@ export class GameManager {
         if (!this.touchDraggedElement) return;
 
         const touch = e.changedTouches[0];
-        this.touchClone.style.display = 'none';
-        const elementUnder = document.elementFromPoint(touch.clientX, touch.clientY);
-        this.touchClone.style.display = '';
+        const touchDuration = Date.now() - this.touchStartTime;
 
-        const dropTarget = elementUnder ? elementUnder.closest('.pile') : null;
+        // Clean up visual states
+        this.touchDraggedElement.classList.remove('touch-active', 'dragging');
+        this.getCachedElements('.pile.drop-zone').forEach(p => p.classList.remove('drop-zone'));
 
-        if (dropTarget) {
+        let dropTarget = null;
+
+        if (this.isDragging && this.touchClone) {
+            // Handle drag-based interaction
+            this.touchClone.style.display = 'none';
+            const elementUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+            this.touchClone.style.display = '';
+            dropTarget = elementUnder ? elementUnder.closest('.pile') : null;
+        } else if (touchDuration < 300) {
+            // Handle tap-based interaction with tolerance zone
+            const toleranceRadius = 20; // Increased touch tolerance
+            let closestElement = null;
+            let closestDistance = Infinity;
+
+            document.querySelectorAll('.pile').forEach(pile => {
+                const rect = pile.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const distance = Math.sqrt(
+                    Math.pow(touch.clientX - centerX, 2) +
+                    Math.pow(touch.clientY - centerY, 2)
+                );
+
+                if (distance < toleranceRadius && distance < closestDistance) {
+                    closestDistance = distance;
+                    closestElement = pile;
+                }
+            });
+
+            dropTarget = closestElement;
+        }
+
+        if (dropTarget && dropTarget !== this.touchDraggedElement.parentElement) {
             const pileElement = this.touchDraggedElement.parentElement;
             const pileId = pileElement.id;
             const cardRank = this.touchDraggedElement.dataset.rank;
@@ -369,13 +484,13 @@ export class GameManager {
             this.attemptMoveWrapper(draggedInfo, targetInfo);
         }
 
-        this.touchDraggedElement.classList.remove('dragging');
-        document.querySelectorAll('.pile.drop-zone').forEach(p => p.classList.remove('drop-zone'));
+        // Clean up
         if (this.touchClone) {
             document.body.removeChild(this.touchClone);
         }
         this.touchDraggedElement = null;
         this.touchClone = null;
+        this.isDragging = false;
     }
 
     addDragListeners(element) {
@@ -390,38 +505,61 @@ export class GameManager {
     }
 
     addGameEventListeners() {
-        const stockPileDiv = document.getElementById('stock-pile');
-        stockPileDiv.addEventListener('click', this.handleStockClick.bind(this));
+        const stockPileDiv = this.getDOMElement('stock-pile');
+        stockPileDiv.addEventListener('click', this.eventListeners.stockClick);
 
-        // Add touch event listeners to card piles
-        document.querySelectorAll('.pile').forEach(pile => {
-            pile.addEventListener('touchstart', this.handleTouchStart.bind(this), {
+        // Add touch event listeners to card piles with optimizations
+        this.getCachedElements('.pile').forEach(pile => {
+            pile.addEventListener('touchstart', this.eventListeners.touchStart, {
                 passive: false
             });
         });
-        document.addEventListener('touchmove', this.handleTouchMove.bind(this), {
+        document.addEventListener('touchmove', this.eventListeners.touchMove, {
             passive: false
         });
-        document.addEventListener('touchend', this.handleTouchEnd.bind(this));
+        document.addEventListener('touchend', this.eventListeners.touchEnd, {
+            passive: true
+        });
+        document.addEventListener('touchcancel', this.eventListeners.touchCancel, {
+            passive: true
+        });
 
-
-        document.getElementById('undo').addEventListener('click', () => {
+        this.getDOMElement('undo').addEventListener('click', () => {
             this.undoLastMove();
         });
-        document.getElementById('auto-complete').addEventListener('click', () => {
+        this.getDOMElement('auto-complete').addEventListener('click', () => {
             this.attemptAutoCompleteWrapper();
         });
-        document.getElementById('new-game').addEventListener('click', () => this.startNewGame());
-        document.getElementById('play-again').addEventListener('click', () => this.startNewGame());
+        this.getDOMElement('new-game').addEventListener('click', () => this.startNewGame());
+        this.getDOMElement('play-again').addEventListener('click', () => this.startNewGame());
 
         // Mute button listener
-        document.getElementById('mute-button').addEventListener('click', (e) => {
+        this.getDOMElement('mute-button').addEventListener('click', (e) => {
             const button = e.target;
             button.textContent = button.textContent === '🔊' ? '🔇' : '🔊';
             updateStatus(button.textContent === '🔊' ? 'Audio unmuted' : 'Audio muted');
         });
 
-        document.addEventListener('keydown', this.handleKeyDown.bind(this));
+        document.addEventListener('keydown', this.eventListeners.keyDown);
+    }
+
+    /**
+     * Remove event listeners for cleanup
+     */
+    removeEventListeners() {
+        const stockPileDiv = this.getDOMElement('stock-pile');
+        if (stockPileDiv) {
+            stockPileDiv.removeEventListener('click', this.eventListeners.stockClick);
+        }
+
+        this.getCachedElements('.pile').forEach(pile => {
+            pile.removeEventListener('touchstart', this.eventListeners.touchStart);
+        });
+
+        document.removeEventListener('touchmove', this.eventListeners.touchMove);
+        document.removeEventListener('touchend', this.eventListeners.touchEnd);
+        document.removeEventListener('touchcancel', this.eventListeners.touchCancel);
+        document.removeEventListener('keydown', this.eventListeners.keyDown);
     }
 
     handleStockClick() {
@@ -470,7 +608,7 @@ export class GameManager {
     }
 
     handleKeyDown(e) {
-        const focusableElements = Array.from(document.querySelectorAll('[tabindex="0"], button'));
+        const focusableElements = Array.from(this.getCachedElements('[tabindex="0"], button'));
         const focusedElement = document.activeElement;
         const focusedIndex = focusableElements.indexOf(focusedElement);
 
@@ -561,7 +699,10 @@ export class GameManager {
     }
 
     startNewGame() {
-        document.getElementById('win-celebration').classList.remove('show');
+        const winCelebration = this.getDOMElement('win-celebration');
+        if (winCelebration) {
+            winCelebration.classList.remove('show');
+        }
         this.clearGameState();
         this.initGame();
         updateStatus("New game started.");
@@ -627,8 +768,8 @@ export class GameManager {
             updateStatus(result.message);
 
             // Update scores
-            document.getElementById('score').textContent = result.score;
-            document.getElementById('moves').textContent = this.moveHistory.length;
+            this.getDOMElement('score').textContent = result.score;
+            this.getDOMElement('moves').textContent = this.moveHistory.length;
 
 
             // Check for win condition
@@ -655,7 +796,7 @@ export class GameManager {
     }
 
     attemptAutoCompleteWrapper() {
-        const initialScore = parseInt(document.getElementById('score').textContent);
+        const initialScore = parseInt(this.getDOMElement('score').textContent);
         const cardsMovedToFoundation = attemptAutoComplete(
             this.tableauPiles,
             this.wastePile,
@@ -666,7 +807,7 @@ export class GameManager {
         if (cardsMovedToFoundation > 0) {
             // Scoring for auto-complete: 10 points per card moved to foundation
             const newScore = initialScore + (cardsMovedToFoundation * 10);
-            document.getElementById('score').textContent = newScore;
+            this.getDOMElement('score').textContent = newScore;
             updateStatus(`Auto-completed ${cardsMovedToFoundation} cards to foundation.`);
             playSound('place');
             this.saveGameState();
@@ -681,11 +822,12 @@ export class GameManager {
             clearInterval(this.timerInterval);
         }
         this.startTime = Date.now();
+        const timerElement = this.getDOMElement('timer');
         this.timerInterval = setInterval(() => {
             const elapsedTime = Date.now() - this.startTime;
             const minutes = Math.floor(elapsedTime / 60000);
             const seconds = Math.floor((elapsedTime % 60000) / 1000);
-            document.getElementById('timer').textContent =
+            timerElement.textContent =
                 `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }, 1000);
     }
