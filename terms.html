@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms - Domain For Sale</title>
+    <style>
+        body {
+            background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 1rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 2rem auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .content-area {
+            background: #ffffff;
+            color: #333;
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .placeholder-text {
+            font-size: 1rem;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 2rem;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            background: #f8f9fa;
+            margin-bottom: 2rem;
+        }
+
+        .terms-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+
+        .terms-section h3 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .terms-section p {
+            color: #666;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .important-notice {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: #212529;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            min-width: 140px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(255, 215, 0, 0.05));
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            border-radius: 6px;
+        }
+
+        .nav-link:hover::before {
+            opacity: 1;
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 20px rgba(212, 175, 55, 0.2);
+            text-decoration: none;
+            color: white;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .nav-link:active {
+            transform: translateY(0);
+        }
+
+        .nav-link:focus {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
+        .nav-link.primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+
+        .nav-link.primary:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: auto;
+            padding: 2rem 0;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: #666;
+            font-size: 0.8rem;
+            margin-top: 1rem;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem auto;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .content-area {
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .terms-section {
+                padding: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .navigation {
+                gap: 0.75rem;
+                margin: 1.5rem 0;
+            }
+
+            .nav-link {
+                padding: 10px 16px;
+                font-size: 13px;
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="page-header">
+            <h1 class="page-title">Terms & Conditions</h1>
+            <p class="page-subtitle">Domain Sale Terms and Legal Information</p>
+        </header>
+
+        <main class="content-area">
+            <div class="important-notice">
+                ⚠️ Important Notice: These are placeholder terms. Please consult with a legal professional before
+                finalizing any domain sale agreement.
+            </div>
+
+            <div class="placeholder-text">
+                <p><strong>Terms & Conditions Placeholder</strong></p>
+                <p>This is where you should add your complete terms and conditions for the domain sale.</p>
+                <p>Consider including sections covering:</p>
+                <ul style="text-align: left; max-width: 500px; margin: 1rem auto;">
+                    <li>Sale terms and payment conditions</li>
+                    <li>Domain transfer process and responsibilities</li>
+                    <li>Warranties and disclaimers</li>
+                    <li>Escrow service requirements</li>
+                    <li>Dispute resolution procedures</li>
+                    <li>Applicable laws and jurisdiction</li>
+                </ul>
+            </div>
+
+            <div class="terms-section">
+                <h3>📋 Sample Terms Structure</h3>
+                <p><strong>1. Domain Sale Agreement</strong> - Outline the basic sale terms</p>
+                <p><strong>2. Payment Terms</strong> - Payment methods, timing, and currency</p>
+                <p><strong>3. Transfer Process</strong> - Step-by-step transfer procedures</p>
+                <p><strong>4. Warranties</strong> - What guarantees you provide about the domain</p>
+                <p><strong>5. Liability</strong> - Limitation of liability and risk allocation</p>
+                <p><strong>6. Dispute Resolution</strong> - How conflicts will be resolved</p>
+            </div>
+
+            <div class="terms-section">
+                <h3>⚖️ Legal Considerations</h3>
+                <p><strong>Jurisdiction:</strong> Specify which country/state laws apply</p>
+                <p><strong>Escrow Services:</strong> Recommend using established escrow services</p>
+                <p><strong>Domain History:</strong> Disclose any relevant domain history</p>
+                <p><strong>Intellectual Property:</strong> Confirm no trademark conflicts</p>
+            </div>
+
+            <div class="terms-section">
+                <h3>📞 Contact Information</h3>
+                <p><strong>Legal Questions:</strong> [Add contact information for legal inquiries]</p>
+                <p><strong>Sale Inquiries:</strong> [Add contact information for purchase questions]</p>
+                <p><strong>Technical Support:</strong> [Add technical contact information]</p>
+            </div>
+
+            <div class="last-updated">
+                Last Updated: [Add date when terms were last updated]
+            </div>
+        </main>
+
+        <nav class="navigation" role="navigation" aria-label="Page navigation">
+            <a href="index.html" class="nav-link primary" aria-label="Return to main game">← Back to Game</a>
+            <a href="about.html" class="nav-link" aria-label="Learn more about domain owner">About Me</a>
+            <a href="purchase.html" class="nav-link" aria-label="Purchase this domain">Purchase This Domain</a>
+        </nav>
+    </div>
+
+    <footer class="footer">
+        <p>2025 Minus Seven Labs</p>
+    </footer>
+</body>
+
+</html>

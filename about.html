@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Me - Domain For Sale</title>
+    <style>
+        body {
+            background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 1rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 2rem auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .content-area {
+            background: #ffffff;
+            color: #333;
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .placeholder-text {
+            font-size: 1rem;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 2rem;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            min-width: 140px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(255, 215, 0, 0.05));
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            border-radius: 6px;
+        }
+
+        .nav-link:hover::before {
+            opacity: 1;
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 20px rgba(212, 175, 55, 0.2);
+            text-decoration: none;
+            color: white;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .nav-link:active {
+            transform: translateY(0);
+        }
+
+        .nav-link:focus {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
+        .nav-link.primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+
+        .nav-link.primary:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: auto;
+            padding: 2rem 0;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem auto;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .content-area {
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .navigation {
+                gap: 0.75rem;
+                margin: 1.5rem 0;
+            }
+
+            .nav-link {
+                padding: 10px 16px;
+                font-size: 13px;
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="page-header">
+            <h1 class="page-title">About Me</h1>
+            <p class="page-subtitle">Domain Owner Information</p>
+        </header>
+
+        <main class="content-area">
+            <div class="placeholder-text">
+                <p><strong>Content Placeholder</strong></p>
+                <p>This is where you can add your personal information, background, or any details about yourself as the
+                    domain owner.</p>
+                <p>You can include information such as:</p>
+                <ul style="text-align: left; max-width: 400px; margin: 1rem auto;">
+                    <li>Your professional background</li>
+                    <li>Why you're selling this domain</li>
+                    <li>Your experience in the industry</li>
+                    <li>Contact information</li>
+                    <li>Any relevant credentials or achievements</li>
+                </ul>
+                <p>Simply replace this placeholder content with your own text while keeping the white background for
+                    easy reading.</p>
+            </div>
+        </main>
+
+        <nav class="navigation" role="navigation" aria-label="Page navigation">
+            <a href="index.html" class="nav-link primary" aria-label="Return to main game">← Back to Game</a>
+            <a href="purchase.html" class="nav-link" aria-label="Purchase this domain">Purchase This Domain</a>
+            <a href="terms.html" class="nav-link" aria-label="View terms and conditions">Terms</a>
+        </nav>
+    </div>
+
+    <footer class="footer">
+        <p>2025 Minus Seven Labs</p>
+    </footer>
+</body>
+
+</html>

@@ -414,12 +414,12 @@ export class GameManager {
         document.getElementById('new-game').addEventListener('click', () => this.startNewGame());
         document.getElementById('play-again').addEventListener('click', () => this.startNewGame());
 
-        // Dummy mute button listener
-        // document.getElementById('mute-button').addEventListener('click', (e) => {
-        //     const button = e.target;
-        //     button.textContent = button.textContent === '🔊' ? '🔇' : '🔊';
-        //     updateStatus(button.textContent === '🔊' ? 'Audio unmuted' : 'Audio muted');
-        // });
+        // Mute button listener
+        document.getElementById('mute-button').addEventListener('click', (e) => {
+            const button = e.target;
+            button.textContent = button.textContent === '🔊' ? '🔇' : '🔊';
+            updateStatus(button.textContent === '🔊' ? 'Audio unmuted' : 'Audio muted');
+        });
 
         document.addEventListener('keydown', this.handleKeyDown.bind(this));
     }

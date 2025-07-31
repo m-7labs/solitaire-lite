@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klondike Solitaire</title>
+    <title>Klondike Solitaire - Domain For Sale</title>
     <style>
         .visually-hidden {
             position: absolute;
@@ -57,7 +57,8 @@
             grid-area: controls;
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.4rem;
+            align-items: center;
         }
 
         .tableau {
@@ -105,6 +106,8 @@
             position: absolute;
             transition: all 0.2s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            background: #fff;
+            border: 2px solid #ccc;
         }
 
         .card:hover {
@@ -119,22 +122,34 @@
         }
 
         .card.face-down {
-            background: linear-gradient(135deg, #1a237e, #3949ab);
-            border: 2px solid #303f9f;
-            background-image:
-                radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255, 255, 255, 0.03) 2px, rgba(255, 255, 255, 0.03) 4px);
+            background: radial-gradient(ellipse at center, #1a1611 0%, #0d0b08 100%);
+            border: 2px solid #2a2318;
+            position: relative;
+            overflow: hidden;
         }
 
         .card.face-down::before {
-            content: "♠♥♣♦";
+            content: "";
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
-            color: rgba(255, 255, 255, 0.2);
-            letter-spacing: 2px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 130'%3E%3Cdefs%3E%3Cpattern id='flowerOfLife' patternUnits='userSpaceOnUse' width='30' height='26'%3E%3Ccircle cx='15' cy='13' r='6' fill='none' stroke='%23c9a96e' stroke-width='0.5' opacity='0.4'/%3E%3Ccircle cx='0' cy='0' r='6' fill='none' stroke='%23c9a96e' stroke-width='0.5' opacity='0.4'/%3E%3Ccircle cx='30' cy='0' r='6' fill='none' stroke='%23c9a96e' stroke-width='0.5' opacity='0.4'/%3E%3Ccircle cx='0' cy='26' r='6' fill='none' stroke='%23c9a96e' stroke-width='0.5' opacity='0.4'/%3E%3Ccircle cx='30' cy='26' r='6' fill='none' stroke='%23c9a96e' stroke-width='0.5' opacity='0.4'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='90' height='130' fill='url(%23flowerOfLife)' opacity='0.3'/%3E%3Cg transform='translate(45,65)'%3E%3Ccircle r='35' fill='none' stroke='%23d4af37' stroke-width='0.8' opacity='0.6'/%3E%3Ccircle r='20' fill='none' stroke='%23d4af37' stroke-width='0.6' opacity='0.7'/%3E%3Cg stroke='%23d4af37' stroke-width='0.4' opacity='0.8'%3E%3Cpolygon points='-17.32,-10 17.32,-10 34.64,20 17.32,50 -17.32,50 -34.64,20' fill='none'/%3E%3Cpolygon points='-12,-20.78 12,-20.78 24,0 12,20.78 -12,20.78 -24,0' fill='none'/%3E%3C/g%3E%3Cg stroke='%23d4af37' stroke-width='0.3' opacity='0.9'%3E%3Cline x1='-25' y1='0' x2='25' y2='0'/%3E%3Cline x1='-12.5' y1='-21.65' x2='12.5' y2='21.65'/%3E%3Cline x1='12.5' y1='-21.65' x2='-12.5' y2='21.65'/%3E%3Cline x1='0' y1='-25' x2='0' y2='25'/%3E%3Cline x1='-21.65' y1='-12.5' x2='21.65' y2='12.5'/%3E%3Cline x1='21.65' y1='-12.5' x2='-21.65' y2='12.5'/%3E%3C/g%3E%3Cg stroke='%23d4af37' fill='none' stroke-width='0.5' opacity='0.6'%3E%3Ccircle r='8'/%3E%3Ccircle r='5'/%3E%3Ccircle r='3'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .card.face-down::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, transparent 40%, rgba(212, 175, 55, 0.05) 70%, rgba(212, 175, 55, 0.1) 100%);
+            border-radius: 6px;
         }
 
         .card.face-up {
@@ -189,13 +204,15 @@
             background: linear-gradient(135deg, #28a745, #20c997);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             transition: all 0.2s ease;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            min-width: 90px;
+            max-width: 140px;
         }
 
         button:hover {
@@ -366,11 +383,149 @@
                 font-size: 32px;
             }
         }
+
+        /* Header Styles */
+        .site-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 2rem;
+            padding: 0 1rem;
+        }
+
+        .site-title {
+            margin: 0;
+            background: linear-gradient(135deg, #ffd700, #ffed4e, #d4af37);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .header-nav .nav-button {
+            padding: 6px 12px;
+            font-size: 12px;
+            min-width: 70px;
+            max-width: 90px;
+        }
+
+        /* Navigation Button Styles */
+        .nav-button {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            min-width: 90px;
+            max-width: 140px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-button::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(255, 215, 0, 0.05));
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            border-radius: 6px;
+        }
+
+        .nav-button:hover::before {
+            opacity: 1;
+        }
+
+        .nav-button:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 20px rgba(212, 175, 55, 0.2);
+            text-decoration: none;
+            color: white;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .nav-button:active {
+            transform: translateY(0);
+        }
+
+        .nav-button:focus {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .site-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: center;
+                text-align: center;
+            }
+
+            .site-title {
+                font-size: 1.8rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .header-nav {
+                gap: 0.5rem;
+            }
+
+            .header-nav .nav-button {
+                padding: 4px 8px;
+                font-size: 11px;
+                min-width: 60px;
+                max-width: 75px;
+            }
+
+            .controls {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.3rem;
+                width: 100%;
+            }
+
+            button {
+                padding: 6px 12px;
+                font-size: 12px;
+                min-width: 80px;
+                max-width: none;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <h1>Klondike Solitaire</h1>
+    <!-- Header Section -->
+    <header class="site-header">
+        <h1 class="site-title">Klondike Solitaire - Domain For Sale</h1>
+        <nav class="header-nav">
+            <a href="about.html" class="nav-button" aria-label="Learn more about this domain">About</a>
+            <a href="purchase.html" class="nav-button" aria-label="Purchase this domain">Buy Me</a>
+            <a href="terms.html" class="nav-button" aria-label="View terms and conditions">Terms</a>
+        </nav>
+    </header>
 
     <div class="game-stats">
         <div class="stat">
@@ -403,6 +558,7 @@
             <button id="new-game" aria-label="Start a new game">New Game</button>
             <button id="undo" aria-label="Undo last move">Undo</button>
             <button id="auto-complete" aria-label="Auto-complete available moves">Auto Complete</button>
+            <button id="mute-button" aria-label="Toggle sound">🔊</button>
         </div>
 
         <!-- Foundation Piles -->
@@ -483,6 +639,12 @@
             gameManager.initializeGame();
         });
     </script>
+
+
+    <!-- Footer -->
+    <footer style="text-align: center; margin-top: auto; padding: 2rem 0; opacity: 0.8; font-size: 0.9rem;">
+        <p>2025 Minus Seven Labs</p>
+    </footer>
 </body>
 
 </html>

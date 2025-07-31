@@ -14,6 +14,7 @@ export function renderCard(card) {
     cardDiv.dataset.suit = card.suit;
 
     if (card.isFaceUp) {
+        cardDiv.classList.add('face-up');
         const suitSymbols = {
             hearts: '♥',
             diamonds: '♦',
@@ -21,15 +22,15 @@ export function renderCard(card) {
             spades: '♠'
         };
         const rankTopLeft = document.createElement('span');
-        rankTopLeft.classList.add('card-rank', 'top-left');
+        rankTopLeft.classList.add('card-rank');
         rankTopLeft.textContent = card.rank;
 
         const suitCenter = document.createElement('span');
-        suitCenter.classList.add('card-suit', 'center');
+        suitCenter.classList.add('card-suit');
         suitCenter.textContent = suitSymbols[card.suit];
 
         const rankBottomRight = document.createElement('span');
-        rankBottomRight.classList.add('card-rank', 'bottom-right');
+        rankBottomRight.classList.add('card-rank-bottom');
         rankBottomRight.textContent = card.rank;
 
         cardDiv.appendChild(rankTopLeft);
@@ -46,7 +47,7 @@ export function renderCard(card) {
         cardDiv.setAttribute('role', 'button');
         cardDiv.setAttribute('aria-label', `${card.rank} of ${card.suit}`);
     } else {
-        cardDiv.classList.add('card-back');
+        cardDiv.classList.add('face-down');
         cardDiv.draggable = false;
         cardDiv.setAttribute('aria-label', 'Face down card');
     }
