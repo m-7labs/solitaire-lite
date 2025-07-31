@@ -20,18 +20,31 @@ export function renderCard(card) {
             clubs: '♣',
             spades: '♠'
         };
-        const rankSpan = document.createElement('span');
-        rankSpan.textContent = card.rank;
-        const suitSpan = document.createElement('span');
-        suitSpan.textContent = suitSymbols[card.suit];
-        cardDiv.appendChild(rankSpan);
-        cardDiv.appendChild(suitSpan);
-        cardDiv.classList.add(card.suit);
+        const rankTopLeft = document.createElement('span');
+        rankTopLeft.classList.add('card-rank', 'top-left');
+        rankTopLeft.textContent = card.rank;
+
+        const suitCenter = document.createElement('span');
+        suitCenter.classList.add('card-suit', 'center');
+        suitCenter.textContent = suitSymbols[card.suit];
+
+        const rankBottomRight = document.createElement('span');
+        rankBottomRight.classList.add('card-rank', 'bottom-right');
+        rankBottomRight.textContent = card.rank;
+
+        cardDiv.appendChild(rankTopLeft);
+        cardDiv.appendChild(suitCenter);
+        cardDiv.appendChild(rankBottomRight);
+
+        if (card.suit === 'hearts' || card.suit === 'diamonds') {
+            cardDiv.classList.add('red');
+        } else {
+            cardDiv.classList.add('black');
+        }
         cardDiv.draggable = true;
         cardDiv.tabIndex = 0; // Make face-up cards focusable
         cardDiv.setAttribute('role', 'button');
         cardDiv.setAttribute('aria-label', `${card.rank} of ${card.suit}`);
-        cardDiv.style.animation = 'card-flip 0.4s ease-in-out';
     } else {
         cardDiv.classList.add('card-back');
         cardDiv.draggable = false;
