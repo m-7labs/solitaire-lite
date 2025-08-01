@@ -519,26 +519,26 @@ function playWinChord(audioContext, frequencies, delay) {
         oscillator.type = 'sine';
         oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + delay);
 
-        // Slight detuning for richness
-        const detune = (index - 1) * 2;
+        // Minimal detuning for subtle richness
+        const detune = (index - 1) * 1;
         oscillator.detune.setValueAtTime(detune, audioContext.currentTime + delay);
 
-        // Individual voice envelopes
-        const voiceGain = 0.2 / frequencies.length; // Normalize by chord size
-        createGentleEnvelope(gainNode, audioContext, 0.05 + delay, voiceGain, 0.1, 0.4);
+        // Softer individual voice envelopes with reduced gain
+        const voiceGain = 0.12 / frequencies.length; // Reduced volume for gentleness
+        createGentleEnvelope(gainNode, audioContext, 0.08 + delay, voiceGain, 0.08, 0.3);
 
         return oscillator;
     });
 
-    // Start all oscillators
+    // Start all oscillators with shorter duration
     oscillators.forEach(osc => {
         osc.start(audioContext.currentTime + delay);
-        osc.stop(audioContext.currentTime + delay + 0.55);
+        osc.stop(audioContext.currentTime + delay + 0.38); // Shortened duration
     });
 }
 
 /**
- * Plays a celebratory sound for winning the game with rich harmonics.
+ * Plays a celebratory sound for winning the game with gentle, light harmonics.
  */
 export async function playWinSound() {
     try {
@@ -548,13 +548,12 @@ export async function playWinSound() {
             return;
         }
 
-        console.log('[SOUND DEBUG] Playing win sound sequence');
+        console.log('[SOUND DEBUG] Playing gentle win sound sequence');
 
-        // Create a joyful chord progression
-        setTimeout(() => playWinChord(audioContext, [523.25, 659.25, 783.99], 0), 0);      // C major
-        setTimeout(() => playWinChord(audioContext, [587.33, 739.99, 880.00], 0.3), 300);  // D major
-        setTimeout(() => playWinChord(audioContext, [659.25, 830.61, 987.77], 0.6), 600);  // E major
-        setTimeout(() => playWinChord(audioContext, [698.46, 880.00, 1046.50], 0.9), 900); // F major
+        // Create a light, ascending chord progression in higher octaves
+        setTimeout(() => playWinChord(audioContext, [1046.50, 1244.51], 0), 0);      // C6-D#6 (light and airy)
+        setTimeout(() => playWinChord(audioContext, [1174.66, 1396.91], 0.2), 200);  // D6-F6 (gentle ascent)
+        setTimeout(() => playWinChord(audioContext, [1318.51, 1567.98], 0.4), 400);  // E6-G6 (bright and pleasant)
 
     } catch (e) {
         console.error('[SOUND DEBUG] Error in playWinSound:', e);
