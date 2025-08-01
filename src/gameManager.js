@@ -790,7 +790,7 @@ export class GameManager {
                 }, 250);
             }
         } else {
-            playSound('error');
+            playSound('invalid');
             updateStatus(result.message);
         }
     }
@@ -809,7 +809,7 @@ export class GameManager {
             const newScore = initialScore + (cardsMovedToFoundation * 10);
             this.getDOMElement('score').textContent = newScore;
             updateStatus(`Auto-completed ${cardsMovedToFoundation} cards to foundation.`);
-            playSound('place');
+            playSound('move');
             this.saveGameState();
             this.updateDisplayWrapper();
             return true;

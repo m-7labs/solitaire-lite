@@ -303,73 +303,261 @@ export function updateStatus(message) {
 // Audio Management
 
 /**
- * Plays a sound for a game action.
+ * Creates a gentle envelope for smooth sound transitions.
+ * @param {GainNode} gainNode - The gain node to apply envelope to.
+ * @param {AudioContext} audioContext - The audio context.
+ * @param {number} attack - Attack time in seconds.
+ * @param {number} sustain - Sustain level (0-1).
+ * @param {number} decay - Decay time in seconds.
+ * @param {number} release - Release time in seconds.
+ */
+function createGentleEnvelope(gainNode, audioContext, attack = 0.05, sustain = 0.3, decay = 0.1, release = 0.3) {
+    const now = audioContext.currentTime;
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(sustain, now + attack);
+    gainNode.gain.linearRampToValueAtTime(sustain * 0.7, now + attack + decay);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, now + attack + decay + release);
+}
+
+/**
+ * Creates a warm filter for more pleasant tones.
+ * @param {AudioContext} audioContext - The audio context.
+ * @returns {BiquadFilterNode} The configured filter.
+ */
+function createWarmFilter(audioContext) {
+    const filter = audioContext.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2000, audioContext.currentTime);
+    filter.Q.setValueAtTime(1, audioContext.currentTime);
+    return filter;
+}
+
+/**
+ * Plays a gentle whoosh sound for card flips.
+ * @param {AudioContext} audioContext - The audio context.
+ */
+function playFlipSound(audioContext) {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const filter = createWarmFilter(audioContext);
+
+    // Create a gentle frequency sweep for a soft whoosh
+    oscillator.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.15);
+
+    createGentleEnvelope(gainNode, audioContext, 0.02, 0.25, 0.05, 0.15);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.22);
+}
+
+/**
+ * Plays an encouraging ascending tone for valid moves.
+ * @param {AudioContext} audioContext - The audio context.
+ */
+function playMoveSound(audioContext) {
+    const oscillator1 = audioContext.createOscillator();
+    const oscillator2 = audioContext.createOscillator();
+    const gainNode1 = audioContext.createGain();
+    const gainNode2 = audioContext.createGain();
+    const masterGain = audioContext.createGain();
+    const filter = createWarmFilter(audioContext);
+
+    // Create a pleasant chord with fundamental and fifth
+    oscillator1.connect(gainNode1);
+    oscillator2.connect(gainNode2);
+    gainNode1.connect(filter);
+    gainNode2.connect(filter);
+    filter.connect(masterGain);
+    masterGain.connect(audioContext.destination);
+
+    oscillator1.type = 'sine';
+    oscillator2.type = 'sine';
+
+    // Root note and perfect fifth for harmony
+    oscillator1.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+    oscillator2.frequency.setValueAtTime(783.99, audioContext.currentTime); // G5
+
+    // Gentle ascending glide
+    oscillator1.frequency.exponentialRampToValueAtTime(587.33, audioContext.currentTime + 0.25); // D5
+    oscillator2.frequency.exponentialRampToValueAtTime(880.00, audioContext.currentTime + 0.25); // A5
+
+    createGentleEnvelope(gainNode1, audioContext, 0.03, 0.3, 0.08, 0.2);
+    createGentleEnvelope(gainNode2, audioContext, 0.03, 0.25, 0.08, 0.2);
+
+    oscillator1.start(audioContext.currentTime);
+    oscillator2.start(audioContext.currentTime);
+    oscillator1.stop(audioContext.currentTime + 0.31);
+    oscillator2.stop(audioContext.currentTime + 0.31);
+}
+
+/**
+ * Plays a gentle, non-punitive sound for invalid moves.
+ * @param {AudioContext} audioContext - The audio context.
+ */
+function playInvalidSound(audioContext) {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const filter = createWarmFilter(audioContext);
+
+    // Create a soft, descending tone that suggests "try again"
+    oscillator.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(349.23, audioContext.currentTime); // F4
+    oscillator.frequency.exponentialRampToValueAtTime(293.66, audioContext.currentTime + 0.3); // D4
+
+    // Softer envelope for less jarring feedback
+    createGentleEnvelope(gainNode, audioContext, 0.04, 0.2, 0.1, 0.25);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.39);
+}
+
+// Global AudioContext for reuse
+let globalAudioContext = null;
+
+/**
+ * Gets or creates the global AudioContext and ensures it's running.
+ * @returns {AudioContext|null} The audio context or null if unavailable.
+ */
+async function getAudioContext() {
+    if (!globalAudioContext) {
+        try {
+            globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            console.log('[SOUND DEBUG] AudioContext created, state:', globalAudioContext.state);
+        } catch (e) {
+            console.error('[SOUND DEBUG] Failed to create AudioContext:', e);
+            return null;
+        }
+    }
+
+    // Resume if suspended (required by modern browsers)
+    if (globalAudioContext.state === 'suspended') {
+        try {
+            await globalAudioContext.resume();
+            console.log('[SOUND DEBUG] AudioContext resumed, new state:', globalAudioContext.state);
+        } catch (e) {
+            console.error('[SOUND DEBUG] Failed to resume AudioContext:', e);
+            return null;
+        }
+    }
+
+    return globalAudioContext;
+}
+
+/**
+ * Plays a sound for a game action with pleasant, encouraging tones.
  * @param {string} type - The type of sound ('move', 'flip', 'invalid', 'win').
  */
-export function playSound(type) {
+export async function playSound(type) {
     const isMuted = document.getElementById('mute-button').textContent === '🔇';
-    if (isMuted) return;
+    console.log('[SOUND DEBUG] playSound called with type:', type, 'muted:', isMuted);
+
+    if (isMuted) {
+        console.log('[SOUND DEBUG] Sound is muted, skipping');
+        return;
+    }
 
     try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+        const audioContext = await getAudioContext();
+        if (!audioContext) {
+            console.error('[SOUND DEBUG] AudioContext unavailable');
+            return;
+        }
+
+        console.log('[SOUND DEBUG] Playing sound type:', type, 'AudioContext state:', audioContext.state);
 
         switch (type) {
             case 'flip':
-                oscillator.type = 'square';
-                oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.2);
+                playFlipSound(audioContext);
                 break;
             case 'move':
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.3);
+                playMoveSound(audioContext);
                 break;
             case 'invalid':
-                oscillator.type = 'sawtooth';
-                oscillator.frequency.setValueAtTime(110, audioContext.currentTime); // A2
-                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.4);
+                playInvalidSound(audioContext);
                 break;
             case 'win':
-                playWinSound(); // Use the more complex win sound
-                return;
+                playWinSound(); // Use the specialized win sound
+                break;
+            default:
+                console.warn('[SOUND DEBUG] Unknown sound type:', type);
         }
-
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
     } catch (e) {
-        console.error("Web Audio API is not supported.", e);
+        console.error('[SOUND DEBUG] Error in playSound:', e);
     }
 }
 
 /**
- * Plays a specialized sound for winning the game.
+ * Plays a single chord for the win sound sequence.
+ * @param {AudioContext} audioContext - The audio context.
+ * @param {number[]} frequencies - Array of frequencies for the chord.
+ * @param {number} delay - Delay offset for the chord.
  */
-export function playWinSound() {
-    try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+function playWinChord(audioContext, frequencies, delay) {
+    const masterGain = audioContext.createGain();
+    const filter = createWarmFilter(audioContext);
+
+    masterGain.connect(filter);
+    filter.connect(audioContext.destination);
+
+    const oscillators = frequencies.map((freq, index) => {
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
 
         oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.01);
+        gainNode.connect(masterGain);
 
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-        oscillator.frequency.exponentialRampToValueAtTime(1046.50, audioContext.currentTime + 0.5); // C6
+        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + delay);
 
-        oscillator.start(audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
-        oscillator.stop(audioContext.currentTime + 0.5);
+        // Slight detuning for richness
+        const detune = (index - 1) * 2;
+        oscillator.detune.setValueAtTime(detune, audioContext.currentTime + delay);
+
+        // Individual voice envelopes
+        const voiceGain = 0.2 / frequencies.length; // Normalize by chord size
+        createGentleEnvelope(gainNode, audioContext, 0.05 + delay, voiceGain, 0.1, 0.4);
+
+        return oscillator;
+    });
+
+    // Start all oscillators
+    oscillators.forEach(osc => {
+        osc.start(audioContext.currentTime + delay);
+        osc.stop(audioContext.currentTime + delay + 0.55);
+    });
+}
+
+/**
+ * Plays a celebratory sound for winning the game with rich harmonics.
+ */
+export async function playWinSound() {
+    try {
+        const audioContext = await getAudioContext();
+        if (!audioContext) {
+            console.error('[SOUND DEBUG] AudioContext unavailable for win sound');
+            return;
+        }
+
+        console.log('[SOUND DEBUG] Playing win sound sequence');
+
+        // Create a joyful chord progression
+        setTimeout(() => playWinChord(audioContext, [523.25, 659.25, 783.99], 0), 0);      // C major
+        setTimeout(() => playWinChord(audioContext, [587.33, 739.99, 880.00], 0.3), 300);  // D major
+        setTimeout(() => playWinChord(audioContext, [659.25, 830.61, 987.77], 0.6), 600);  // E major
+        setTimeout(() => playWinChord(audioContext, [698.46, 880.00, 1046.50], 0.9), 900); // F major
+
     } catch (e) {
-        console.error("Web Audio API is not supported in this browser.", e);
+        console.error('[SOUND DEBUG] Error in playWinSound:', e);
     }
 }
 
