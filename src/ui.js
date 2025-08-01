@@ -379,21 +379,21 @@ function playMoveSound(audioContext) {
     oscillator1.type = 'sine';
     oscillator2.type = 'sine';
 
-    // Root note and perfect fifth for harmony - centered around 428Hz
-    oscillator1.frequency.setValueAtTime(428.00, audioContext.currentTime); // Ab4/G#4
-    oscillator2.frequency.setValueAtTime(642.00, audioContext.currentTime); // Eb5/D#5
+    // Root note and perfect fifth for harmony - raised ~15% for more delicate tones
+    oscillator1.frequency.setValueAtTime(492.2, audioContext.currentTime); // Raised from 428Hz
+    oscillator2.frequency.setValueAtTime(738.3, audioContext.currentTime); // Raised from 642Hz
 
-    // Gentle ascending glide
-    oscillator1.frequency.exponentialRampToValueAtTime(481.5, audioContext.currentTime + 0.25); // Bb4/A#4
-    oscillator2.frequency.exponentialRampToValueAtTime(722.25, audioContext.currentTime + 0.25); // F5
+    // Gentle ascending glide to higher, more delicate frequencies
+    oscillator1.frequency.exponentialRampToValueAtTime(553.7, audioContext.currentTime + 0.16); // Raised from 481.5Hz
+    oscillator2.frequency.exponentialRampToValueAtTime(830.6, audioContext.currentTime + 0.16); // Raised from 722.25Hz
 
-    createGentleEnvelope(gainNode1, audioContext, 0.03, 0.15, 0.08, 0.2);
-    createGentleEnvelope(gainNode2, audioContext, 0.03, 0.12, 0.08, 0.2);
+    createGentleEnvelope(gainNode1, audioContext, 0.05, 0.08, 0.05, 0.1);
+    createGentleEnvelope(gainNode2, audioContext, 0.05, 0.06, 0.05, 0.1);
 
     oscillator1.start(audioContext.currentTime);
     oscillator2.start(audioContext.currentTime);
-    oscillator1.stop(audioContext.currentTime + 0.31);
-    oscillator2.stop(audioContext.currentTime + 0.31);
+    oscillator1.stop(audioContext.currentTime + 0.2);
+    oscillator2.stop(audioContext.currentTime + 0.2);
 }
 
 /**
@@ -523,9 +523,9 @@ function playWinChord(audioContext, frequencies, delay) {
         const detune = (index - 1) * 1;
         oscillator.detune.setValueAtTime(detune, audioContext.currentTime + delay);
 
-        // Softer individual voice envelopes with reduced gain
-        const voiceGain = 0.12 / frequencies.length; // Reduced volume for gentleness
-        createGentleEnvelope(gainNode, audioContext, 0.08 + delay, voiceGain, 0.08, 0.3);
+        // Softer individual voice envelopes with further reduced gain
+        const voiceGain = 0.08 / frequencies.length; // Further reduced from 0.12 for lighter tones
+        createGentleEnvelope(gainNode, audioContext, 0.1 + delay, voiceGain, 0.08, 0.3);
 
         return oscillator;
     });
