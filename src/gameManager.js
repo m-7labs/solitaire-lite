@@ -38,6 +38,18 @@ export class GameManager {
         this.lastTouchAction = 0;
         this.isDragging = false;
 
+        // Swipe gesture detection
+        this.swipeThreshold = 50; // Minimum distance for swipe
+        this.swipeVelocityThreshold = 0.3; // Minimum velocity for swipe (px/ms)
+        this.swipeMaxTime = 1000; // Maximum time for swipe gesture
+        this.longPressThreshold = 500; // Long press duration
+        this.isSwipeGesture = false;
+        this.swipeDirection = null;
+        this.longPressTimer = null;
+        this.touchStartPosition = { x: 0, y: 0 };
+        this.pullToRefreshActive = false;
+        this.pullThreshold = 80;
+
         // DOM Element Cache for performance optimization
         this.domCache = new Map();
         this.cachedSelectors = new Map();
@@ -333,7 +345,35 @@ export class GameManager {
         }
         this.lastTouchAction = now;
 
+        const touch = e.targetTouches[0];
+        this.touchStartX = touch.clientX;
+        this.touchStartY = touch.clientY;
+        this.touchStartPosition = { x: touch.clientX, y: touch.clientY };
+        this.touchStartTime = now;
+        this.isDragging = false;
+        this.isSwipeGesture = false;
+        this.swipeDirection = null;
+
+        // Clear any existing long press timer
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+
         const target = e.target.closest('.card');
+
+        // Handle global swipe gestures on the game area
+        if (!target && e.target.closest('#game-area')) {
+            // Allow swipe gestures on empty game area
+            this.handleGlobalSwipeStart(e);
+            return;
+        }
+
+        // Handle pull-to-refresh at top of page
+        if (window.scrollY === 0 && this.touchStartY < 100) {
+            this.pullToRefreshActive = true;
+        }
+
         if (!target || target.classList.contains('card-back')) {
             return;
         }
@@ -342,15 +382,14 @@ export class GameManager {
         e.preventDefault();
 
         this.touchDraggedElement = target;
-        this.touchStartTime = now;
-        this.isDragging = false;
-
-        const touch = e.targetTouches[0];
-        this.touchStartX = touch.clientX;
-        this.touchStartY = touch.clientY;
 
         // Add visual feedback immediately
         this.touchDraggedElement.classList.add('touch-active');
+
+        // Set up long press timer for hints
+        this.longPressTimer = setTimeout(() => {
+            this.handleLongPress(target);
+        }, this.longPressThreshold);
 
         // Haptic feedback if supported
         if (navigator.vibrate) {
@@ -359,15 +398,49 @@ export class GameManager {
     }
 
     handleTouchMove(e) {
-        if (!this.touchDraggedElement) return;
-
         const touch = e.targetTouches[0];
         const dx = touch.clientX - this.touchStartX;
         const dy = touch.clientY - this.touchStartY;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // Only start dragging if movement exceeds threshold
-        if (!this.isDragging && distance < this.touchMoveThreshold) {
+        // Clear long press timer on movement
+        if (this.longPressTimer && distance > this.touchMoveThreshold) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+
+        // Handle pull-to-refresh gesture
+        if (this.pullToRefreshActive) {
+            this.handlePullToRefresh(dy);
+            if (dy > this.touchMoveThreshold) {
+                e.preventDefault(); // Prevent scrolling during pull
+            }
+            return;
+        }
+
+        // Handle global swipe gestures
+        if (!this.touchDraggedElement && this.detectSwipeGesture(dx, dy, distance)) {
+            e.preventDefault();
+            return;
+        }
+
+        if (!this.touchDraggedElement) return;
+
+        // Detect if this is becoming a swipe gesture rather than a drag
+        if (!this.isDragging && this.detectSwipeGesture(dx, dy, distance)) {
+            this.isSwipeGesture = true;
+            e.preventDefault();
+            return;
+        }
+
+        // Only start dragging if movement exceeds threshold and not a swipe
+        if (!this.isDragging && !this.isSwipeGesture && distance < this.touchMoveThreshold) {
+            return;
+        }
+
+        // If it's a swipe gesture, don't proceed with drag
+        if (this.isSwipeGesture) {
+            e.preventDefault();
             return;
         }
 
@@ -409,10 +482,34 @@ export class GameManager {
     }
 
     handleTouchEnd(e) {
-        if (!this.touchDraggedElement) return;
-
         const touch = e.changedTouches[0];
         const touchDuration = Date.now() - this.touchStartTime;
+        const dx = touch.clientX - this.touchStartX;
+        const dy = touch.clientY - this.touchStartY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Clear long press timer
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+
+        // Handle pull-to-refresh completion
+        if (this.pullToRefreshActive) {
+            this.completePullToRefresh(dy);
+            this.pullToRefreshActive = false;
+            return;
+        }
+
+        // Handle swipe gestures
+        if (this.isSwipeGesture || (!this.touchDraggedElement && this.isValidSwipe(dx, dy, distance, touchDuration))) {
+            this.processSwipeGesture(dx, dy, distance, touchDuration);
+            this.isSwipeGesture = false;
+            this.swipeDirection = null;
+            return;
+        }
+
+        if (!this.touchDraggedElement) return;
 
         // Clean up visual states
         this.touchDraggedElement.classList.remove('touch-active', 'dragging');
@@ -491,6 +588,8 @@ export class GameManager {
         this.touchDraggedElement = null;
         this.touchClone = null;
         this.isDragging = false;
+        this.isSwipeGesture = false;
+        this.swipeDirection = null;
     }
 
     addDragListeners(element) {
@@ -839,6 +938,269 @@ export class GameManager {
         }
     }
 
+    /**
+     * Handle global swipe start for non-card areas
+     */
+    handleGlobalSwipeStart(e) {
+        // Just record the position for swipe detection
+        // Visual feedback could be added here
+    }
+
+    /**
+     * Detect if current movement constitutes a swipe gesture
+     */
+    detectSwipeGesture(dx, dy, distance) {
+        if (distance < this.swipeThreshold) {
+            return false;
+        }
+
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+
+        // Determine primary direction
+        if (absDx > absDy) {
+            // Horizontal swipe
+            this.swipeDirection = dx > 0 ? 'right' : 'left';
+        } else {
+            // Vertical swipe
+            this.swipeDirection = dy > 0 ? 'down' : 'up';
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if gesture qualifies as valid swipe
+     */
+    isValidSwipe(dx, dy, distance, duration) {
+        if (distance < this.swipeThreshold || duration > this.swipeMaxTime) {
+            return false;
+        }
+
+        const velocity = distance / duration;
+        return velocity >= this.swipeVelocityThreshold;
+    }
+
+    /**
+     * Process completed swipe gesture
+     */
+    processSwipeGesture(dx, dy, distance, duration) {
+        if (!this.isValidSwipe(dx, dy, distance, duration)) {
+            return;
+        }
+
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+        let direction;
+
+        // Determine swipe direction
+        if (absDx > absDy) {
+            direction = dx > 0 ? 'right' : 'left';
+        } else {
+            direction = dy > 0 ? 'down' : 'up';
+        }
+
+        // Execute swipe action with haptic feedback
+        if (navigator.vibrate) {
+            navigator.vibrate(30);
+        }
+
+        switch (direction) {
+            case 'right':
+                // Swipe right: Undo last move
+                this.undoLastMove();
+                updateStatus("Swiped right: Undid last move");
+                break;
+
+            case 'left':
+                // Swipe left: New game
+                this.startNewGame();
+                updateStatus("Swiped left: Started new game");
+                break;
+
+            case 'up':
+                // Swipe up: Auto-complete
+                if (this.attemptAutoCompleteWrapper()) {
+                    updateStatus("Swiped up: Auto-completed moves");
+                } else {
+                    updateStatus("Swiped up: No auto-complete moves available");
+                }
+                break;
+
+            case 'down':
+                // Swipe down could trigger hint or help
+                this.showHint();
+                break;
+        }
+    }
+
+    /**
+     * Handle long press gesture for hints
+     */
+    handleLongPress(target) {
+        if (navigator.vibrate) {
+            navigator.vibrate([50, 50, 50]);
+        }
+
+        // Show hint about the card
+        const cardRank = target.dataset.rank;
+        const cardSuit = target.dataset.suit;
+        updateStatus(`Long press: ${cardRank} of ${cardSuit} - Look for valid moves!`);
+
+        // Add visual hint effect
+        target.classList.add('hint-highlight');
+        setTimeout(() => {
+            target.classList.remove('hint-highlight');
+        }, 1500);
+    }
+
+    /**
+     * Handle pull-to-refresh gesture
+     */
+    handlePullToRefresh(dy) {
+        if (dy > this.pullThreshold) {
+            // Add visual feedback for pull-to-refresh
+            const gameArea = this.getDOMElement('game-area');
+            if (gameArea) {
+                gameArea.style.transform = `translateY(${Math.min(dy - this.pullThreshold, 50)}px)`;
+                gameArea.style.opacity = `${Math.max(0.7, 1 - (dy - this.pullThreshold) / 100)}`;
+            }
+        }
+    }
+
+    /**
+     * Complete pull-to-refresh action
+     */
+    completePullToRefresh(dy) {
+        const gameArea = this.getDOMElement('game-area');
+        if (gameArea) {
+            gameArea.style.transform = '';
+            gameArea.style.opacity = '';
+        }
+
+        if (dy > this.pullThreshold) {
+            // Trigger new game
+            setTimeout(() => {
+                this.startNewGame();
+                updateStatus("Pull to refresh: Started new game");
+            }, 100);
+
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+    }
+
+    /**
+     * Show hint for current game state
+     */
+    showHint() {
+        // Simple hint system - look for obvious moves
+        let hintMessage = "Hint: ";
+
+        // Check for moves from waste pile
+        if (this.wastePile.length > 0) {
+            const topWaste = this.wastePile[this.wastePile.length - 1];
+            hintMessage += `Try moving ${topWaste.rank} of ${topWaste.suit} from waste pile. `;
+        }
+
+        // Check for face-down cards that can be flipped
+        let faceDownCount = 0;
+        this.tableauPiles.forEach(pile => {
+            const faceDownCards = pile.filter(card => !card.isFaceUp);
+            faceDownCount += faceDownCards.length;
+        });
+
+        if (faceDownCount > 0) {
+            hintMessage += `${faceDownCount} face-down cards can be revealed. `;
+        }
+
+        // Check if auto-complete is available
+        if (this.canAutoComplete()) {
+            hintMessage += "Auto-complete is available! ";
+        }
+
+        if (hintMessage === "Hint: ") {
+            hintMessage += "Look for cards that can move to foundations or between tableau piles.";
+        }
+
+        updateStatus(hintMessage);
+
+        if (navigator.vibrate) {
+            navigator.vibrate(20);
+        }
+    }
+
+    /**
+     * Check if auto-complete moves are available
+     */
+    canAutoComplete() {
+        // Simple check - look for any face-up cards that could move to foundation
+        for (let pile of this.tableauPiles) {
+            if (pile.length > 0) {
+                const topCard = pile[pile.length - 1];
+                if (topCard.isFaceUp) {
+                    for (let foundationPile of this.foundationPiles) {
+                        if (foundationPile.length === 0 && topCard.rank === 'A') {
+                            return true;
+                        }
+                        if (foundationPile.length > 0) {
+                            const topFoundation = foundationPile[foundationPile.length - 1];
+                            if (topCard.suit === topFoundation.suit &&
+                                this.getCardValue(topCard.rank) === this.getCardValue(topFoundation.rank) + 1) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check waste pile
+        if (this.wastePile.length > 0) {
+            const topWaste = this.wastePile[this.wastePile.length - 1];
+            for (let foundationPile of this.foundationPiles) {
+                if (foundationPile.length === 0 && topWaste.rank === 'A') {
+                    return true;
+                }
+                if (foundationPile.length > 0) {
+                    const topFoundation = foundationPile[foundationPile.length - 1];
+                    if (topWaste.suit === topFoundation.suit &&
+                        this.getCardValue(topWaste.rank) === this.getCardValue(topFoundation.rank) + 1) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get numeric value of card rank
+     */
+    getCardValue(rank) {
+        const values = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
+        return values[rank] || 0;
+    }
+
+    /**
+     * Add fullscreen toggle functionality
+     */
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().then(() => {
+                updateStatus("Entered fullscreen mode");
+            }).catch(err => {
+                updateStatus("Could not enter fullscreen mode");
+            });
+        } else {
+            document.exitFullscreen().then(() => {
+                updateStatus("Exited fullscreen mode");
+            });
+        }
+    }
+
     initializeGame() {
         if (!this.loadGameState()) {
             this.initGame();
@@ -847,5 +1209,63 @@ export class GameManager {
             this.startTimer(); // Resume timer if game state loaded
         }
         this.addGameEventListeners();
+
+        // Initialize PWA features
+        this.initializePWA();
+    }
+
+    /**
+     * Initialize PWA-specific features
+     */
+    initializePWA() {
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registered:', registration);
+                })
+                .catch(error => {
+                    console.log('Service Worker registration failed:', error);
+                });
+        }
+
+        // Handle app install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            this.showInstallButton();
+        });
+
+        // Handle app installed event
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA was installed');
+            updateStatus("App installed successfully!");
+            this.hideInstallButton();
+        });
+
+        // Handle orientation changes for mobile
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                this.clearDOMCache(); // Clear cache to force re-layout
+                this.updateDisplayWrapper();
+            }, 100);
+        });
+    }
+
+    /**
+     * Show install app button
+     */
+    showInstallButton() {
+        // This could show a custom install button in the UI
+        // For now, just log it
+        console.log('App can be installed');
+    }
+
+    /**
+     * Hide install app button
+     */
+    hideInstallButton() {
+        // Hide the install button if it exists
+        console.log('Install button hidden');
     }
 }

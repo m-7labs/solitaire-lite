@@ -1,0 +1,86 @@
+{
+    "name": "Mobile Solitaire - Classic Card Game",
+    "short_name": "Solitaire",
+    "description": "A beautiful, mobile-first classic solitaire card game with touch controls and offline play",
+    "start_url": "./index.html",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "theme_color": "#2E7D32",
+    "background_color": "#1B5E20",
+    "lang": "en",
+    "dir": "ltr",
+    "categories": [
+        "games",
+        "entertainment"
+    ],
+    "icons": [
+        {
+            "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%232E7D32;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%234CAF50;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='192' height='192' fill='url(%23grad)' rx='20'/%3E%3Crect x='30' y='40' width='50' height='70' fill='white' rx='8' stroke='%23ddd' stroke-width='2'/%3E%3Crect x='85' y='35' width='50' height='70' fill='white' rx='8' stroke='%23ddd' stroke-width='2'/%3E%3Crect x='110' y='30' width='50' height='70' fill='white' rx='8' stroke='%23ddd' stroke-width='2'/%3E%3Ctext x='55' y='130' font-family='serif' font-size='16' fill='white' text-anchor='middle'%3E♠♥♦♣%3C/text%3E%3C/svg%3E",
+            "sizes": "192x192",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%232E7D32;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%234CAF50;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' fill='url(%23grad)' rx='50'/%3E%3Crect x='80' y='100' width='130' height='180' fill='white' rx='20' stroke='%23ddd' stroke-width='5'/%3E%3Crect x='220' y='90' width='130' height='180' fill='white' rx='20' stroke='%23ddd' stroke-width='5'/%3E%3Crect x='300' y='80' width='130' height='180' fill='white' rx='20' stroke='%23ddd' stroke-width='5'/%3E%3Ctext x='256' y='340' font-family='serif' font-size='48' fill='white' text-anchor='middle'%3E♠♥♦♣%3C/text%3E%3C/svg%3E",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 844'%3E%3Crect width='390' height='844' fill='%231B5E20'/%3E%3Ctext x='195' y='422' font-family='Arial' font-size='24' fill='white' text-anchor='middle'%3EMobile Solitaire Game%3C/text%3E%3C/svg%3E",
+            "sizes": "390x844",
+            "type": "image/svg+xml",
+            "form_factor": "narrow",
+            "label": "Mobile Solitaire gameplay on phone"
+        }
+    ],
+    "features": [
+        "offline",
+        "touch-controls",
+        "swipe-gestures",
+        "auto-save",
+        "undo-moves",
+        "auto-complete"
+    ],
+    "edge_side_panel": {
+        "preferred_width": 400
+    },
+    "shortcuts": [
+        {
+            "name": "New Game",
+            "short_name": "New Game",
+            "description": "Start a new solitaire game",
+            "url": "./index.html?action=new-game",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234CAF50'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z'/%3E%3C/svg%3E",
+                    "sizes": "24x24",
+                    "type": "image/svg+xml"
+                }
+            ]
+        },
+        {
+            "name": "Continue Game",
+            "short_name": "Continue",
+            "description": "Continue your saved game",
+            "url": "./index.html?action=continue",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234CAF50'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E",
+                    "sizes": "24x24",
+                    "type": "image/svg+xml"
+                }
+            ]
+        }
+    ],
+    "prefer_related_applications": false,
+    "protocol_handlers": [
+        {
+            "protocol": "web+solitaire",
+            "url": "./index.html?action=%s"
+        }
+    ]
+}
