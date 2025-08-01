@@ -387,8 +387,8 @@ function playMoveSound(audioContext) {
     oscillator1.frequency.exponentialRampToValueAtTime(587.33, audioContext.currentTime + 0.25); // D5
     oscillator2.frequency.exponentialRampToValueAtTime(880.00, audioContext.currentTime + 0.25); // A5
 
-    createGentleEnvelope(gainNode1, audioContext, 0.03, 0.3, 0.08, 0.2);
-    createGentleEnvelope(gainNode2, audioContext, 0.03, 0.25, 0.08, 0.2);
+    createGentleEnvelope(gainNode1, audioContext, 0.03, 0.15, 0.08, 0.2);
+    createGentleEnvelope(gainNode2, audioContext, 0.03, 0.12, 0.08, 0.2);
 
     oscillator1.start(audioContext.currentTime);
     oscillator2.start(audioContext.currentTime);
