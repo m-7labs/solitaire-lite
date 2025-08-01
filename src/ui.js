@@ -379,13 +379,13 @@ function playMoveSound(audioContext) {
     oscillator1.type = 'sine';
     oscillator2.type = 'sine';
 
-    // Root note and perfect fifth for harmony
-    oscillator1.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-    oscillator2.frequency.setValueAtTime(783.99, audioContext.currentTime); // G5
+    // Root note and perfect fifth for harmony - centered around 428Hz
+    oscillator1.frequency.setValueAtTime(428.00, audioContext.currentTime); // Ab4/G#4
+    oscillator2.frequency.setValueAtTime(642.00, audioContext.currentTime); // Eb5/D#5
 
     // Gentle ascending glide
-    oscillator1.frequency.exponentialRampToValueAtTime(587.33, audioContext.currentTime + 0.25); // D5
-    oscillator2.frequency.exponentialRampToValueAtTime(880.00, audioContext.currentTime + 0.25); // A5
+    oscillator1.frequency.exponentialRampToValueAtTime(481.5, audioContext.currentTime + 0.25); // Bb4/A#4
+    oscillator2.frequency.exponentialRampToValueAtTime(722.25, audioContext.currentTime + 0.25); // F5
 
     createGentleEnvelope(gainNode1, audioContext, 0.03, 0.15, 0.08, 0.2);
     createGentleEnvelope(gainNode2, audioContext, 0.03, 0.12, 0.08, 0.2);
