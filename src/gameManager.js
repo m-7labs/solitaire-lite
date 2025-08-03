@@ -25,6 +25,7 @@ export class GameManager {
         this.selectedCard = null; // For keyboard navigation
         this.draggedElement = null;
         this.touchDraggedElement = null;
+        this.touchStockPile = null; // For handling stock pile touches
         this.touchStartX = 0;
         this.touchStartY = 0;
         this.touchClone = null;
@@ -361,6 +362,27 @@ export class GameManager {
         }
 
         const target = e.target.closest('.card');
+        const stockPile = e.target.closest('#stock-pile');
+
+        // Handle stock pile touch events specifically
+        if (stockPile && !target) {
+            // This is a touch on the stock pile (not on a card)
+            // Store the stock pile element for touch end handling
+            this.touchDraggedElement = null; // No card being dragged
+            this.touchStockPile = stockPile;
+
+            // Add visual feedback
+            stockPile.classList.add('touch-active');
+
+            // Prevent default to avoid conflicts
+            e.preventDefault();
+
+            // Haptic feedback if supported
+            if (navigator.vibrate) {
+                navigator.vibrate(10);
+            }
+            return;
+        }
 
         // Handle global swipe gestures on the game area
         if (!target && e.target.closest('#game-area')) {
@@ -494,6 +516,21 @@ export class GameManager {
             this.longPressTimer = null;
         }
 
+        // Handle stock pile touch completion
+        if (this.touchStockPile && !this.touchDraggedElement) {
+            // Remove visual feedback
+            this.touchStockPile.classList.remove('touch-active');
+
+            // Only trigger stock click if this was a quick tap (not a drag/swipe)
+            if (touchDuration < 300 && distance < this.touchMoveThreshold) {
+                this.handleStockClick();
+            }
+
+            // Clean up
+            this.touchStockPile = null;
+            return;
+        }
+
         // Handle pull-to-refresh completion
         if (this.pullToRefreshActive) {
             this.completePullToRefresh(dy);
@@ -586,6 +623,7 @@ export class GameManager {
             document.body.removeChild(this.touchClone);
         }
         this.touchDraggedElement = null;
+        this.touchStockPile = null;
         this.touchClone = null;
         this.isDragging = false;
         this.isSwipeGesture = false;
